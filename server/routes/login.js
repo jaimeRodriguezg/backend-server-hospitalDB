@@ -81,77 +81,87 @@ async function verify(token) {
 
 app.post('/google', async(req, res) => {
 
-    let token = req.body.idtoken;
+    let token = req.body.token;
+    // console.log(`el token es ${token}`);
+    // console.log(`el idtoken es ${req.body.token}`);
 
     //verifica el token de google y guarda la request de google en un objeto googleUser
     let googleUser = await verify(token)
-        .catch(e => {
-            return res.status(403).json({
-                ok: false,
-                err: e
-            })
+        .catch(() => {
+            return;
+        })
+    if (googleUser === undefined) {
+        return res.status(403).json({
+            ok: false,
+            mensaje: 'Token no valido'
         });
-
-    Usuario.findOne({ email: googleUser.email }, (err, usuarioDB) => {
-        if (err) {
-            return res.status(500).json({
-                ok: false,
-                err
-            });
-        };
-        if (usuarioDB) {
-            // el usuario no fue creado mediante google
-            if (usuarioDB.google === false) {
-                return res.status(400).json({
+    } else {
+        Usuario.findOne({ email: googleUser.email }, (err, usuarioDB) => {
+            if (err) {
+                return res.status(500).json({
                     ok: false,
-                    err: {
-                        message: 'Debe usar su autenticación normal'
-                    }
+                    err
                 });
-            } else { // creamos un token al usuario creado mediante google
-                let token = jwt.sign({
-                    usuario: usuarioDB //payload del token,
-                }, SEED, { expiresIn: 14400 }); //se ingresa la semilla y la expiración (30 días)
-
-                return res.json({
-                    ok: true,
-                    usuario: googleUser,
-                    token
-                });
-            }
-        } else { //si el usuario no existe en nuestra base de datos, hay que crearlo
-
-            let usuario = new Usuario();
-
-            usuario.nombre = googleUser.nombre;
-            usuario.email = googleUser.email;
-            usuario.img = googleUser.img;
-            usuario.google = true;
-            usuario.password = ':)' //lo ocupamos para que pase la resticcion de la base de datos
-
-            usuario.save((err, usuarioDB) => {
-                if (err) {
-                    return res.status(500).json({
+            };
+            if (usuarioDB) {
+                // el usuario no fue creado mediante google
+                if (usuarioDB.google === false) {
+                    return res.status(400).json({
                         ok: false,
-                        err
+                        err: {
+                            message: 'Debe usar su autenticación normal'
+                        }
                     });
-                };
-                let token = jwt.sign({
-                    usuario: usuarioDB //payload del token,
-                }, SEED, { expiresIn: 14400 }); //se ingresa la semilla y la expiración (30 días)
+                } else { // creamos un token al usuario creado mediante google
+                    let token = jwt.sign({
+                        usuario: usuarioDB //payload del token,
+                    }, SEED, { expiresIn: 14400 }); //se ingresa la semilla y la expiración (30 días)
 
-                return res.json({
-                    ok: true,
-                    usuario: googleUser,
-                    token
-                });
-            })
-        }
+                    return res.json({
+                        ok: true,
+                        usuario: usuarioDB,
+                        token,
+                        id: usuarioDB.id
+                    });
+                }
+            } else { //si el usuario no existe en nuestra base de datos, hay que crearlo
 
-    })
+                let usuario = new Usuario();
+
+                usuario.nombre = googleUser.nombre;
+                usuario.email = googleUser.email;
+                usuario.img = googleUser.img;
+                usuario.google = true;
+                usuario.password = ':)' //lo ocupamos para que pase la resticcion de la base de datos
+
+                usuario.save((err, usuarioDB) => {
+                    if (err) {
+                        return res.status(500).json({
+                            ok: false,
+                            err
+                        });
+                    };
+                    let token = jwt.sign({
+                        usuario: usuarioDB //payload del token,
+                    }, SEED, { expiresIn: 14400 }); //se ingresa la semilla y la expiración (30 días)
+
+                    return res.json({
+                        ok: true,
+                        usuario: usuarioDB,
+                        token,
+                        id: usuarioDB.id
+                    });
+                })
+            }
+
+        })
+
+    }
+});
 
 
-})
+
+
 
 
 

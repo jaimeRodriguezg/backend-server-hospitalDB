@@ -1,10 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 
 const app = express();
 
+
+// mildware para CORS
+app.use(cors());
 
 // Body Parser
 // parse application/x-www-form-urlencoded

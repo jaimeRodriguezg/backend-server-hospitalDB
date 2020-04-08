@@ -111,7 +111,7 @@ app.put('/usuario/:id', verificaToken, (req, res) => {
 // ==========================================
 // Crear un nuevo usuario
 // ==========================================
-app.post('/usuario', verificaToken, (req, res) => {
+app.post('/usuario', (req, res) => {
 
     var body = req.body;
 
